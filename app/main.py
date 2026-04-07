@@ -121,10 +121,12 @@ def print_ranked_shortlist(reports: list[Report]) -> None:
             f"{rank}. {report.address or report.name or report.property_id} | "
             f"asking_price: {_format_currency(asking_value)} | "
             f"suggested_offer: ${metrics.suggested_max_offer:,.0f} | "
+            f"score: {report.decision.score:.1f} | "
             f"irr: {_format_percent(metrics.irr)} | "
             f"dscr: {_format_ratio(metrics.dscr)} | "
             f"cash_on_cash: {_format_percent(metrics.cash_on_cash)} | "
-            f"flags: {len(report.flags)} | "
+            f"total_flags: {report.total_flags} | "
+            f"data_quality_score: {report.data_quality_score:.1f} | "
             f"binding_offer_constraint: {metrics.binding_offer_constraint or 'n/a'}"
         )
 
@@ -135,6 +137,8 @@ def print_summary(report: Report) -> None:
     if report.address:
         print(report.address)
     print(f"Decision: {report.decision.recommendation.upper()} ({report.decision.score}/100)")
+    print(f"Total flags: {report.total_flags}")
+    print(f"Data quality score: {report.data_quality_score:.1f}")
     print("")
     print("Metrics:")
     print(f"  NOI before reserves: ${metrics.noi_before_reserves:,.0f}")

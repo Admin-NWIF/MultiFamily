@@ -60,10 +60,7 @@ def normalize_property(property_input: NormalizedPropertyInput) -> UnderwritingA
             value=values["loan_amount"],
             status=ProvenanceStatus.DEFAULTED,
             source="purchase_price * max_ltv",
-            confidence=min(
-                provenance["purchase_price"].confidence,
-                provenance["max_ltv"].confidence,
-            ),
+            confidence=_min_confidence(provenance["purchase_price"].confidence, provenance["max_ltv"].confidence),
             review_flag=True,
             note="Loan amount defaulted from purchase price and max LTV.",
         )
@@ -111,4 +108,16 @@ def _resolve_field(
     provenance[field_name] = field.model_copy(
         update={"value": value, "review_flag": review_flag}
     )
+    return value
+
+
+def _min_confidence(left: float | str, right: float | str) -> float | str:
+    if isinstance(left, str) or isinstance(right, str):
+        return left if _confidence_score(left) <= _confidence_score(right) else right
+    return min(left, right)
+
+
+def _confidence_score(value: float | str) -> float:
+    if isinstance(value, str):
+        return {"low": 0.0, "medium": 0.5, "high": 1.0}.get(value, 0.0)
     return value

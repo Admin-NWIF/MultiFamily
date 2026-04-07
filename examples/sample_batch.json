@@ -62,5 +62,31 @@
     "capex_reserve": {"value": 5000, "status": "estimated", "source": "500_per_unit", "confidence": 0.7, "review_flag": true, "note": "Replacement reserve."},
     "interest_rate": {"value": 0.065, "status": "estimated", "source": "lender_quote", "confidence": 0.8, "review_flag": true, "note": "Interest rate."},
     "exit_cap_rate": {"value": 0.065, "status": "estimated", "source": "market_assumption", "confidence": 0.7, "review_flag": true, "note": "Exit cap."}
+  },
+  {
+    "property_id": "batch-12-unit-clean",
+    "name": "Clean 12-Unit",
+    "address": "1200 Lake Blvd, San Leandro, CA",
+    "units": {"value": 12, "status": "actual", "source": "broker_om", "confidence": "high", "review_flag": false, "note": "Unit count from OM."},
+    "purchase_price": {"value": 2400000, "status": "actual", "source": "broker_ask", "confidence": "high", "review_flag": false, "note": "Asking price."},
+    "gross_potential_rent": {"value": 420000, "status": "actual", "source": "rent_roll", "confidence": "high", "review_flag": false, "note": "Annualized rent roll."},
+    "rent_growth": {"value": 0.03, "status": "actual", "source": "investment_committee", "confidence": "high", "review_flag": false, "note": "Approved growth assumption."},
+    "vacancy_rate": {"value": 0.05, "status": "actual", "source": "investment_committee", "confidence": "high", "review_flag": false, "note": "Approved vacancy assumption."},
+    "other_income": {"value": 18000, "status": "actual", "source": "t12", "confidence": "high", "review_flag": false, "note": "Ancillary income."},
+    "operating_expenses": {"value": 145000, "status": "actual", "source": "t12_adjusted", "confidence": "high", "review_flag": false, "note": "Adjusted expenses."},
+    "expense_growth": {"value": 0.025, "status": "actual", "source": "investment_committee", "confidence": "high", "review_flag": false, "note": "Approved expense growth assumption."},
+    "capex_reserve": {"value": 6000, "status": "actual", "source": "investment_committee", "confidence": "high", "review_flag": false, "note": "Replacement reserve."},
+    "loan_amount": {"value": 1680000, "status": "actual", "source": "lender_quote", "confidence": "high", "review_flag": false, "note": "Loan amount."},
+    "max_ltv": {"value": 0.7, "status": "actual", "source": "lender_quote", "confidence": "high", "review_flag": false, "note": "Financing assumption."},
+    "interest_rate": {"value": 0.0625, "status": "actual", "source": "lender_quote", "confidence": "high", "review_flag": false, "note": "Interest rate."},
+    "amortization_years": {"value": 30, "status": "actual", "source": "lender_quote", "confidence": "high", "review_flag": false, "note": "Amortization."},
+    "hold_years": {"value": 5, "status": "actual", "source": "investment_plan", "confidence": "high", "review_flag": false, "note": "Hold period."},
+    "exit_cap_rate": {"value": 0.065, "status": "actual", "source": "investment_committee", "confidence": "high", "review_flag": false, "note": "Exit cap."},
+    "selling_cost_rate": {"value": 0.02, "status": "actual", "source": "investment_committee", "confidence": "high", "review_flag": false, "note": "Selling costs."},
+    "acquisition_cost_rate": {"value": 0.02, "status": "actual", "source": "investment_committee", "confidence": "high", "review_flag": false, "note": "Acquisition costs."},
+    "discount_rate": {"value": 0.1, "status": "actual", "source": "investment_committee", "confidence": "high", "review_flag": false, "note": "Discount rate."},
+    "target_cap_rate": {"value": 0.065, "status": "actual", "source": "investment_committee", "confidence": "high", "review_flag": false, "note": "Target cap rate."},
+    "target_dscr": {"value": 1.2, "status": "actual", "source": "investment_committee", "confidence": "high", "review_flag": false, "note": "Target DSCR."},
+    "target_cash_on_cash": {"value": 0.08, "status": "actual", "source": "investment_committee", "confidence": "high", "review_flag": false, "note": "Target cash-on-cash."}
   }
 ]

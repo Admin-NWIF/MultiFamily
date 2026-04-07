@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import StrEnum
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 
 
 class ProvenanceStatus(StrEnum):
@@ -19,7 +19,7 @@ class ProvenanceField(BaseModel):
     value: Any = None
     status: ProvenanceStatus = ProvenanceStatus.MISSING
     source: str | None = None
-    confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    confidence: float | Literal["low", "medium", "high"] = 0.0
     review_flag: bool = False
     note: str | None = None
 
@@ -134,7 +134,7 @@ class OfferAnalysis(BaseModel):
 
 class Decision(BaseModel):
     recommendation: Literal["pass", "review", "pursue"]
-    score: int
+    score: float
     reasons: list[str]
 
 
@@ -155,3 +155,6 @@ class Report(BaseModel):
     decision: Decision
     flags: list[Flag]
     provenance: dict[str, ProvenanceField]
+    data_quality_score: float = 100.0
+    total_flags: int = 0
+    low_confidence_fields: int = 0

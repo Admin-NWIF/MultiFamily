@@ -29,6 +29,7 @@ class BatchScreeningTests(unittest.TestCase):
         third.metrics.cash_on_cash = 0.07
         for report in [first, second, third]:
             report.flags = []
+            report.total_flags = 0
 
         ranked = rank_reports([first, second, third])
 
@@ -47,15 +48,23 @@ class BatchScreeningTests(unittest.TestCase):
         good.metrics.npv = 100_000
         good.metrics.dscr = 1.35
         good.metrics.irr = 0.15
+        good.flags = []
+        good.total_flags = 0
         negative_npv.metrics.npv = -1
         negative_npv.metrics.dscr = 1.35
         negative_npv.metrics.irr = 0.15
+        negative_npv.flags = []
+        negative_npv.total_flags = 0
         low_dscr.metrics.npv = 100_000
         low_dscr.metrics.dscr = 1.19
         low_dscr.metrics.irr = 0.15
+        low_dscr.flags = []
+        low_dscr.total_flags = 0
         low_irr.metrics.npv = 100_000
         low_irr.metrics.dscr = 1.35
         low_irr.metrics.irr = 0.119
+        low_irr.flags = []
+        low_irr.total_flags = 0
 
         shortlisted = shortlist_properties([negative_npv, low_dscr, low_irr, good])
 
@@ -69,15 +78,57 @@ class BatchScreeningTests(unittest.TestCase):
         clean.metrics.irr = 0.14
         clean.metrics.cash_on_cash = 0.05
         clean.flags = []
-        flagged.metrics.irr = 0.30
+        clean.total_flags = 0
+        flagged.metrics.irr = 0.15
         flagged.metrics.cash_on_cash = 0.10
         flagged.flags = [
             Flag(code="TEST", severity="warning", message="Synthetic flag."),
         ]
+        flagged.total_flags = len(flagged.flags)
 
         ranked = rank_reports([flagged, clean])
 
         self.assertEqual([report.property_id for report in ranked], ["clean", "flagged"])
+
+    def test_low_confidence_lowers_ranking(self) -> None:
+        normal = self._base_report().model_copy(deep=True)
+        low_confidence = self._base_report().model_copy(deep=True)
+        normal.property_id = "normal"
+        low_confidence.property_id = "low_confidence"
+        normal.metrics.irr = 0.15
+        low_confidence.metrics.irr = 0.15
+        normal.metrics.cash_on_cash = 0.06
+        low_confidence.metrics.cash_on_cash = 0.06
+        normal.flags = []
+        low_confidence.flags = []
+        normal.total_flags = 0
+        low_confidence.total_flags = 0
+        low_confidence.provenance["purchase_price"].confidence = "low"
+
+        ranked = rank_reports([low_confidence, normal])
+
+        self.assertEqual([report.property_id for report in ranked], ["normal", "low_confidence"])
+
+    def test_bad_data_gets_filtered_out(self) -> None:
+        good = self._base_report().model_copy(deep=True)
+        bad_data = self._base_report().model_copy(deep=True)
+        good.property_id = "good"
+        bad_data.property_id = "bad_data"
+        for report in [good, bad_data]:
+            report.metrics.npv = 100_000
+            report.metrics.dscr = 1.35
+            report.metrics.irr = 0.15
+        good.flags = []
+        good.total_flags = 0
+        bad_data.flags = [
+            Flag(code=f"TEST_{idx}", severity="warning", message="Synthetic flag.")
+            for idx in range(7)
+        ]
+        bad_data.total_flags = len(bad_data.flags)
+
+        shortlisted = shortlist_properties([bad_data, good])
+
+        self.assertEqual([report.property_id for report in shortlisted], ["good"])
 
     def test_screen_properties_returns_ranked_reports(self) -> None:
         sample_path = Path(__file__).resolve().parents[1] / "examples" / "sample_batch.json"

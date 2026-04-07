@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from multifamily_screener.reports import build_report
+from multifamily_screener.scoring import calculate_deal_score
 from multifamily_screener.schemas import Report
 
 FinalReport = Report
@@ -20,6 +21,7 @@ def shortlist_properties(reports: list[FinalReport], top_n: int = 10) -> list[Fi
         and report.metrics.dscr >= 1.2
         and report.metrics.irr is not None
         and report.metrics.irr >= 0.12
+        and report.total_flags <= 6
     ]
     return rank_reports(qualified)[:top_n]
 
@@ -37,5 +39,4 @@ def rank_reports(reports: list[FinalReport]) -> list[FinalReport]:
 
 
 def _ranking_score(report: FinalReport) -> float:
-    irr = report.metrics.irr if report.metrics.irr is not None else float("-inf")
-    return irr - (0.5 * len(report.flags))
+    return calculate_deal_score(report.metrics, report.flags, report.provenance)
