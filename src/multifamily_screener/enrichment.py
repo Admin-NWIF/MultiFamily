@@ -31,6 +31,20 @@ def enrich_property_input(
     defaults = defaults or EnrichmentDefaults()
     updates: dict[str, ProvenanceField] = {}
 
+    if (
+        (property_input.operating_expenses is None or property_input.operating_expenses.value is None)
+        and property_input.gross_potential_rent is not None
+        and property_input.gross_potential_rent.value is not None
+    ):
+        updates["operating_expenses"] = ProvenanceField(
+            value=float(property_input.gross_potential_rent.value) * 0.40,
+            status=ProvenanceStatus.DEFAULTED,
+            source="enrichment_defaults",
+            confidence=0.5,
+            review_flag=True,
+            note="operating_expenses defaulted to 40% of gross potential rent.",
+        )
+
     for field_name, default_value in defaults.model_dump().items():
         current = getattr(property_input, field_name)
         if current is None or current.value is None:

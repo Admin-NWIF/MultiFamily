@@ -12,6 +12,9 @@ if SRC_DIR.exists() and str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
 from multifamily_screener.reports import build_report
+from multifamily_screener.human_reports import write_batch_reports, write_human_reports
+from multifamily_screener.ingestion.rentcast_client import RentCastClient
+from multifamily_screener.normalization.rentcast_mapper import normalized_property_from_rentcast_address
 from multifamily_screener.schemas import Report
 from multifamily_screener.screening.batch import screen_properties, shortlist_properties
 
@@ -43,20 +46,34 @@ PROVENANCE_FIELDS = {
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Screen a normalized multifamily property JSON file.")
-    parser.add_argument("property_json", help="Path to normalized property JSON.")
+    parser.add_argument("property_json", nargs="?", help="Path to normalized property JSON, JSON array, or CSV file.")
+    parser.add_argument("--rentcast-address", help="Fetch and screen property data from RentCast by address.")
+    parser.add_argument("--override", action="store_true", help="Override the local 50-request RentCast API safety limit.")
+    parser.add_argument("--top-n", type=int, default=10, help="Top N deals to include in batch shortlist.")
+    parser.add_argument("--score-threshold", type=float, default=45.0, help="Minimum score for batch shortlist inclusion.")
     args = parser.parse_args()
 
-    payload = load_input_payload(args.property_json)
+    if args.rentcast_address:
+        payload = normalized_property_from_rentcast_address(
+            args.rentcast_address,
+            RentCastClient(override_limit=args.override),
+        )
+    elif args.property_json:
+        payload = load_input_payload(args.property_json)
+    else:
+        parser.error("Provide a property JSON/CSV path or --rentcast-address.")
+
     if isinstance(payload, list):
         reports = screen_properties(payload)
-        shortlist = shortlist_properties(reports)
-        print_ranked_shortlist(shortlist)
+        shortlist = shortlist_properties(reports, top_n=args.top_n, score_threshold=args.score_threshold)
+        batch_output_dir = write_batch_reports(reports, shortlist)
+        print("Batch analysis complete.")
+        print(f"View dashboard at: {batch_output_dir / 'index.html'}")
         return 0
 
     report = build_report(payload)
-    print_summary(report)
-    print("\nFull report JSON:")
-    print(report.model_dump_json(indent=2))
+    output_dir = write_human_reports(report)
+    print(f"Report written to {output_dir / 'summary.html'}")
     return 0
 
 

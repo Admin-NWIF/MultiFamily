@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import json
+import tempfile
 import unittest
 from pathlib import Path
 
 from multifamily_screener.ingestion import load_property_json
 from multifamily_screener.reports import build_report
+from multifamily_screener.human_reports import write_human_reports
 
 
 class ReportTests(unittest.TestCase):
@@ -38,6 +40,18 @@ class ReportTests(unittest.TestCase):
         self.assertIn("assumed_fields", payload)
         self.assertEqual(payload["provenance"]["gross_potential_rent"]["status"], "estimated")
         self.assertEqual(payload["provenance"]["vacancy_rate"]["source"], "enrichment_defaults")
+
+    def test_human_report_files_are_generated(self) -> None:
+        sample_path = Path(__file__).resolve().parents[1] / "examples" / "sample_property.json"
+        report = build_report(load_property_json(sample_path))
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_dir = write_human_reports(report, tmpdir)
+
+            self.assertTrue((output_dir / "summary.md").exists())
+            self.assertTrue((output_dir / "summary.html").exists())
+            self.assertTrue((output_dir / "full_report.json").exists())
+            self.assertIn("Key Metrics", (output_dir / "summary.md").read_text())
+            self.assertIn("<html", (output_dir / "summary.html").read_text())
 
 
 if __name__ == "__main__":

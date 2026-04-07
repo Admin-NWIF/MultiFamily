@@ -12,18 +12,17 @@ def screen_properties(properties: list[dict]) -> list[FinalReport]:
     return rank_reports(reports)
 
 
-def shortlist_properties(reports: list[FinalReport], top_n: int = 10) -> list[FinalReport]:
-    qualified = [
-        report
-        for report in reports
-        if report.metrics.npv > 0
-        and report.metrics.dscr is not None
-        and report.metrics.dscr >= 1.2
-        and report.metrics.irr is not None
-        and report.metrics.irr >= 0.12
-        and report.total_flags <= 6
-    ]
-    return rank_reports(qualified)[:top_n]
+def shortlist_properties(
+    reports: list[FinalReport],
+    top_n: int = 10,
+    score_threshold: float = 45.0,
+) -> list[FinalReport]:
+    ranked = rank_reports(reports)
+    shortlisted: list[FinalReport] = []
+    for index, report in enumerate(ranked):
+        if report.decision.score > score_threshold or index < top_n:
+            shortlisted.append(report)
+    return shortlisted
 
 
 def rank_reports(reports: list[FinalReport]) -> list[FinalReport]:
