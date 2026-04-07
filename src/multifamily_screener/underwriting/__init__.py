@@ -4,10 +4,12 @@ from multifamily_screener.underwriting.expenses import break_even_occupancy, noi
 from multifamily_screener.underwriting.income import effective_gross_income
 from multifamily_screener.underwriting.metrics import calculate_metrics, cap_rate, cash_on_cash
 from multifamily_screener.underwriting.offer import exit_value, suggested_max_offer
+from multifamily_screener.underwriting.pro_forma import build_pro_forma
 
 __all__ = [
     "annual_debt_service",
     "break_even_occupancy",
+    "build_pro_forma",
     "calculate_metrics",
     "cap_rate",
     "cash_on_cash",

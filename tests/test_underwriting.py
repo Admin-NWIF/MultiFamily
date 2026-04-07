@@ -10,9 +10,12 @@ from multifamily_screener.reports import build_report
 from multifamily_screener.underwriting import (
     annual_debt_service,
     break_even_occupancy,
+    build_pro_forma,
     dscr,
     effective_gross_income,
+    exit_value,
     irr,
+    loan_balance,
     noi,
     npv,
     suggested_max_offer,
@@ -48,9 +51,51 @@ class UnderwritingTests(unittest.TestCase):
         property_input = load_property_json("examples/sample_property.json")
         report = build_report(property_input)
         assumptions = normalize_property(enrich_property_input(property_input))
-        offer = suggested_max_offer(assumptions, report.metrics.noi)
+        offer = suggested_max_offer(assumptions, report.metrics.noi_before_reserves)
         self.assertGreater(offer, 0)
         self.assertLess(offer, assumptions.purchase_price)
+
+    def test_rent_growth_is_applied_year_by_year(self) -> None:
+        assumptions = normalize_property(enrich_property_input(load_property_json("examples/sample_property.json")))
+        rows = build_pro_forma(assumptions)
+        self.assertAlmostEqual(rows[0].gross_potential_rent, assumptions.gross_potential_rent)
+        self.assertAlmostEqual(rows[1].gross_potential_rent, assumptions.gross_potential_rent * 1.03)
+
+    def test_expense_growth_is_applied_year_by_year(self) -> None:
+        assumptions = normalize_property(enrich_property_input(load_property_json("examples/sample_property.json")))
+        rows = build_pro_forma(assumptions)
+        self.assertAlmostEqual(rows[0].operating_expenses, assumptions.operating_expenses)
+        self.assertAlmostEqual(rows[1].operating_expenses, assumptions.operating_expenses * 1.035)
+
+    def test_dscr_uses_noi_before_reserves(self) -> None:
+        report = build_report(load_property_json("examples/sample_property.json"))
+        first_year = report.pro_forma[0]
+        expected_dscr = first_year.noi_before_reserves / first_year.annual_debt_service
+        after_reserve_dscr = first_year.noi_after_reserves / first_year.annual_debt_service
+        self.assertAlmostEqual(report.metrics.dscr or 0.0, expected_dscr)
+        self.assertGreater(report.metrics.dscr or 0.0, after_reserve_dscr)
+
+    def test_irr_and_npv_include_final_year_sale_proceeds(self) -> None:
+        property_input = load_property_json("examples/sample_property.json")
+        assumptions = normalize_property(enrich_property_input(property_input))
+        report = build_report(property_input)
+        rows = build_pro_forma(assumptions)
+        equity = assumptions.purchase_price - assumptions.loan_amount + assumptions.purchase_price * assumptions.acquisition_cost_rate
+        final_sale_value = exit_value(rows[-1].noi_before_reserves, assumptions.exit_cap_rate)
+        terminal_balance = loan_balance(
+            assumptions.loan_amount,
+            assumptions.interest_rate,
+            assumptions.amortization_years,
+            assumptions.hold_years,
+        )
+        sale_proceeds = final_sale_value * (1.0 - assumptions.selling_cost_rate) - terminal_balance
+        cash_flows_with_sale = [-equity] + [row.cash_flow_before_tax for row in rows]
+        cash_flows_without_sale = list(cash_flows_with_sale)
+        cash_flows_with_sale[-1] += sale_proceeds
+        self.assertAlmostEqual(report.pro_forma[-1].sale_proceeds, sale_proceeds)
+        self.assertAlmostEqual(report.metrics.npv, npv(assumptions.discount_rate, cash_flows_with_sale))
+        self.assertGreater(report.metrics.npv, npv(assumptions.discount_rate, cash_flows_without_sale))
+        self.assertAlmostEqual(report.metrics.irr or 0.0, irr(cash_flows_with_sale) or 0.0)
 
     def test_provenance_field_defaults_missing_review_flag(self) -> None:
         field = ProvenanceField()

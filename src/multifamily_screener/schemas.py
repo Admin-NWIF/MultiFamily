@@ -39,9 +39,11 @@ class NormalizedPropertyInput(BaseModel):
     units: ProvenanceField | None = None
     purchase_price: ProvenanceField | None = None
     gross_potential_rent: ProvenanceField | None = None
+    rent_growth_rate: ProvenanceField | None = None
     vacancy_rate: ProvenanceField | None = None
     other_income: ProvenanceField | None = None
     operating_expenses: ProvenanceField | None = None
+    expense_growth_rate: ProvenanceField | None = None
     capex_reserve: ProvenanceField | None = None
     loan_amount: ProvenanceField | None = None
     max_ltv: ProvenanceField | None = None
@@ -64,9 +66,11 @@ class UnderwritingAssumptions(BaseModel):
     units: int
     purchase_price: float
     gross_potential_rent: float
+    rent_growth_rate: float
     vacancy_rate: float
     other_income: float
     operating_expenses: float
+    expense_growth_rate: float
     capex_reserve: float
     loan_amount: float
     max_ltv: float
@@ -83,9 +87,27 @@ class UnderwritingAssumptions(BaseModel):
     provenance: dict[str, ProvenanceField]
 
 
+class ProFormaRow(BaseModel):
+    year: int
+    gross_potential_rent: float
+    vacancy_loss: float
+    other_income: float
+    effective_gross_income: float
+    operating_expenses: float
+    noi_before_reserves: float
+    capex_reserve: float
+    noi_after_reserves: float
+    annual_debt_service: float
+    cash_flow_before_tax: float
+    sale_proceeds: float = 0.0
+    total_cash_flow: float
+
+
 class UnderwritingMetrics(BaseModel):
     effective_gross_income: float
-    noi: float
+    noi_before_reserves: float
+    noi_after_reserves: float
+    cash_flow_before_tax: float
     cap_rate: float
     annual_debt_service: float
     dscr: float | None
@@ -96,7 +118,16 @@ class UnderwritingMetrics(BaseModel):
     break_even_occupancy: float
     exit_value: float
     suggested_max_offer: float
+    suggested_max_offer_binding_constraint: str
     terminal_loan_balance: float
+
+
+class OfferAnalysis(BaseModel):
+    suggested_max_offer: float
+    binding_constraint: str
+    cap_rate_offer: float
+    dscr_offer: float
+    cash_on_cash_offer: float
 
 
 class Decision(BaseModel):
@@ -117,6 +148,8 @@ class Report(BaseModel):
     name: str | None = None
     address: str | None = None
     metrics: UnderwritingMetrics
+    pro_forma: list[ProFormaRow]
+    assumed_fields: dict[str, ProvenanceField]
     decision: Decision
     flags: list[Flag]
     provenance: dict[str, ProvenanceField]

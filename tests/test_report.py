@@ -14,10 +14,14 @@ class ReportTests(unittest.TestCase):
         report = build_report(load_property_json(sample_path))
 
         self.assertEqual(report.property_id, "six-unit-oakland-demo")
-        self.assertGreater(report.metrics.noi, 0)
+        self.assertGreater(report.metrics.noi_before_reserves, 0)
+        self.assertGreater(report.metrics.noi_after_reserves, 0)
+        self.assertEqual(len(report.pro_forma), 5)
+        self.assertGreater(report.pro_forma[-1].sale_proceeds, 0)
         self.assertGreater(report.metrics.annual_debt_service, 0)
         self.assertIsNotNone(report.metrics.dscr)
         self.assertGreater(report.metrics.suggested_max_offer, 0)
+        self.assertIn(report.metrics.suggested_max_offer_binding_constraint, {"target_cap_rate", "target_dscr", "target_cash_on_cash"})
         self.assertIn(report.decision.recommendation, {"pass", "review", "pursue"})
         self.assertIn("purchase_price", report.provenance)
         self.assertEqual(report.provenance["purchase_price"].value, 1_650_000)
@@ -28,7 +32,9 @@ class ReportTests(unittest.TestCase):
         report = build_report(json.loads(sample_path.read_text()))
 
         payload = report.model_dump(mode="json")
-        self.assertGreater(payload["metrics"]["noi"], 0)
+        self.assertGreater(payload["metrics"]["noi_before_reserves"], 0)
+        self.assertIn("pro_forma", payload)
+        self.assertIn("assumed_fields", payload)
         self.assertEqual(payload["provenance"]["gross_potential_rent"]["status"], "estimated")
         self.assertEqual(payload["provenance"]["vacancy_rate"]["source"], "enrichment_defaults")
 

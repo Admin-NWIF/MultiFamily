@@ -26,6 +26,14 @@
     "review_flag": true,
     "note": "Six units at blended monthly rent of $2,850."
   },
+  "rent_growth_rate": {
+    "value": 0.03,
+    "status": "estimated",
+    "source": "market_rent_growth_assumption",
+    "confidence": 0.65,
+    "review_flag": true,
+    "note": "Annual rent growth assumption."
+  },
   "operating_expenses": {
     "value": 76000,
     "status": "estimated",
@@ -33,6 +41,14 @@
     "confidence": 0.7,
     "review_flag": true,
     "note": "Includes property tax reassessment estimate."
+  },
+  "expense_growth_rate": {
+    "value": 0.035,
+    "status": "estimated",
+    "source": "expense_inflation_assumption",
+    "confidence": 0.65,
+    "review_flag": true,
+    "note": "Annual operating expense and reserve growth assumption."
   },
   "interest_rate": {
     "value": 0.0675,

@@ -33,7 +33,9 @@ def print_summary(report: Report) -> None:
     print(f"Decision: {report.decision.recommendation.upper()} ({report.decision.score}/100)")
     print("")
     print("Metrics:")
-    print(f"  NOI: ${metrics.noi:,.0f}")
+    print(f"  NOI before reserves: ${metrics.noi_before_reserves:,.0f}")
+    print(f"  NOI after reserves: ${metrics.noi_after_reserves:,.0f}")
+    print(f"  Cash flow before tax: ${metrics.cash_flow_before_tax:,.0f}")
     print(f"  Cap rate: {metrics.cap_rate:.2%}")
     print(f"  Annual debt service: ${metrics.annual_debt_service:,.0f}")
     print(f"  DSCR: {_format_ratio(metrics.dscr)}")
@@ -44,6 +46,23 @@ def print_summary(report: Report) -> None:
     print(f"  Break-even occupancy: {metrics.break_even_occupancy:.2%}")
     print(f"  Exit value: ${metrics.exit_value:,.0f}")
     print(f"  Suggested max offer: ${metrics.suggested_max_offer:,.0f}")
+    print(f"  Binding offer constraint: {metrics.suggested_max_offer_binding_constraint}")
+    print("")
+    print("Pro Forma:")
+    for row in report.pro_forma:
+        sale_note = f", sale proceeds ${row.sale_proceeds:,.0f}" if row.sale_proceeds else ""
+        print(
+            f"  Year {row.year}: EGI ${row.effective_gross_income:,.0f}, "
+            f"NOI before reserves ${row.noi_before_reserves:,.0f}, "
+            f"NOI after reserves ${row.noi_after_reserves:,.0f}, "
+            f"CFBT ${row.cash_flow_before_tax:,.0f}{sale_note}"
+        )
+    print("")
+    print("Assumed/defaulted fields:")
+    if not report.assumed_fields:
+        print("  None")
+    for field_name, provenance in report.assumed_fields.items():
+        print(f"  - {field_name}: {provenance.status.value} from {provenance.source or 'unknown'}")
     print("")
     print("Flags:")
     if not report.flags:

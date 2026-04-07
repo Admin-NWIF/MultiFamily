@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from multifamily_screener.schemas import UnderwritingAssumptions
+from multifamily_screener.schemas import OfferAnalysis, UnderwritingAssumptions
 from multifamily_screener.underwriting.common import safe_divide
 from multifamily_screener.underwriting.debt import mortgage_constant
 
@@ -10,6 +10,10 @@ def exit_value(noi_value: float, exit_cap_rate: float) -> float:
 
 
 def suggested_max_offer(assumptions: UnderwritingAssumptions, noi_value: float) -> float:
+    return analyze_suggested_offer(assumptions, noi_value).suggested_max_offer
+
+
+def analyze_suggested_offer(assumptions: UnderwritingAssumptions, noi_value: float) -> OfferAnalysis:
     cap_offer = safe_divide(noi_value, assumptions.target_cap_rate) or 0.0
     debt_constant = mortgage_constant(assumptions.interest_rate, assumptions.amortization_years)
     supported_loan = safe_divide(noi_value, assumptions.target_dscr * debt_constant) or 0.0
@@ -18,5 +22,25 @@ def suggested_max_offer(assumptions: UnderwritingAssumptions, noi_value: float) 
         1.0 - assumptions.max_ltv + assumptions.acquisition_cost_rate
     )
     coc_offer = safe_divide(noi_value, coc_denominator) or 0.0
-    candidates = [value for value in [cap_offer, dscr_offer, coc_offer] if value > 0]
-    return min(candidates) if candidates else 0.0
+    candidates = {
+        "target_cap_rate": cap_offer,
+        "target_dscr": dscr_offer,
+        "target_cash_on_cash": coc_offer,
+    }
+    positive_candidates = {key: value for key, value in candidates.items() if value > 0}
+    if not positive_candidates:
+        return OfferAnalysis(
+            suggested_max_offer=0.0,
+            binding_constraint="none",
+            cap_rate_offer=cap_offer,
+            dscr_offer=dscr_offer,
+            cash_on_cash_offer=coc_offer,
+        )
+    binding_constraint = min(positive_candidates, key=positive_candidates.get)
+    return OfferAnalysis(
+        suggested_max_offer=positive_candidates[binding_constraint],
+        binding_constraint=binding_constraint,
+        cap_rate_offer=cap_offer,
+        dscr_offer=dscr_offer,
+        cash_on_cash_offer=coc_offer,
+    )
