@@ -1,0 +1,53 @@
+{
+  "property_id": "six-unit-oakland-demo",
+  "name": "Oak Street 6-Unit",
+  "address": "2140 Oak St, Oakland, CA",
+  "units": {
+    "value": 6,
+    "status": "actual",
+    "source": "offering_memorandum",
+    "confidence": 0.95,
+    "review_flag": false,
+    "note": "Unit count from OM."
+  },
+  "purchase_price": {
+    "value": 1650000,
+    "status": "actual",
+    "source": "broker_asking_price",
+    "confidence": 0.9,
+    "review_flag": false,
+    "note": "Asking price from broker package."
+  },
+  "gross_potential_rent": {
+    "value": 205200,
+    "status": "estimated",
+    "source": "rent_roll_annualized",
+    "confidence": 0.8,
+    "review_flag": true,
+    "note": "Six units at blended monthly rent of $2,850."
+  },
+  "operating_expenses": {
+    "value": 76000,
+    "status": "estimated",
+    "source": "t12_plus_tax_reassessment",
+    "confidence": 0.7,
+    "review_flag": true,
+    "note": "Includes property tax reassessment estimate."
+  },
+  "interest_rate": {
+    "value": 0.0675,
+    "status": "estimated",
+    "source": "lender_quote",
+    "confidence": 0.75,
+    "review_flag": true,
+    "note": "Indicative fixed-rate financing quote."
+  },
+  "exit_cap_rate": {
+    "value": 0.0675,
+    "status": "estimated",
+    "source": "market_cap_rate_assumption",
+    "confidence": 0.65,
+    "review_flag": true,
+    "note": "Exit cap assumption for small Bay Area multifamily."
+  }
+}
