@@ -46,16 +46,16 @@ def print_summary(report: Report) -> None:
     print(f"  Break-even occupancy: {metrics.break_even_occupancy:.2%}")
     print(f"  Exit value: ${metrics.exit_value:,.0f}")
     print(f"  Suggested max offer: ${metrics.suggested_max_offer:,.0f}")
-    print(f"  Binding offer constraint: {metrics.suggested_max_offer_binding_constraint}")
+    print(f"  Binding offer constraint: {metrics.binding_offer_constraint or 'n/a'}")
     print("")
     print("Pro Forma:")
     for row in report.pro_forma:
-        sale_note = f", sale proceeds ${row.sale_proceeds:,.0f}" if row.sale_proceeds else ""
+        sale_note = f", sale proceeds ${row['sale_proceeds']:,.0f}" if row["sale_proceeds"] else ""
         print(
-            f"  Year {row.year}: EGI ${row.effective_gross_income:,.0f}, "
-            f"NOI before reserves ${row.noi_before_reserves:,.0f}, "
-            f"NOI after reserves ${row.noi_after_reserves:,.0f}, "
-            f"CFBT ${row.cash_flow_before_tax:,.0f}{sale_note}"
+            f"  Year {row['year']}: EGI ${row['effective_gross_income']:,.0f}, "
+            f"NOI before reserves ${row['noi_before_reserves']:,.0f}, "
+            f"NOI after reserves ${row['noi_after_reserves']:,.0f}, "
+            f"CFBT ${row['cash_flow_before_tax']:,.0f}{sale_note}"
         )
     print("")
     print("Assumed/defaulted fields:")

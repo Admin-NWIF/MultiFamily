@@ -17,11 +17,11 @@ DEFAULTS: dict[str, float | int] = {
 NUMERIC_FIELDS = (
     "purchase_price",
     "gross_potential_rent",
-    "rent_growth_rate",
+    "rent_growth",
     "vacancy_rate",
     "other_income",
     "operating_expenses",
-    "expense_growth_rate",
+    "expense_growth",
     "capex_reserve",
     "max_ltv",
     "interest_rate",

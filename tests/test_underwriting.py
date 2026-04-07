@@ -16,17 +16,21 @@ from multifamily_screener.underwriting import (
     exit_value,
     irr,
     loan_balance,
-    noi,
+    noi_after_reserves,
+    noi_before_reserves,
     npv,
     suggested_max_offer,
 )
 
 
 class UnderwritingTests(unittest.TestCase):
-    def test_effective_gross_income_and_noi(self) -> None:
+    def test_noi_before_reserves_and_after_reserves_are_separate(self) -> None:
         egi = effective_gross_income(100_000, 0.05, 5_000)
         self.assertAlmostEqual(egi, 100_000)
-        self.assertAlmostEqual(noi(egi, 35_000, 2_500), 62_500)
+        before_reserves = noi_before_reserves(egi, 35_000)
+        after_reserves = noi_after_reserves(before_reserves, 2_500)
+        self.assertAlmostEqual(before_reserves, 65_000)
+        self.assertAlmostEqual(after_reserves, 62_500)
 
     def test_annual_debt_service_zero_interest(self) -> None:
         self.assertAlmostEqual(annual_debt_service(300_000, 0.0, 30), 10_000)
@@ -51,9 +55,10 @@ class UnderwritingTests(unittest.TestCase):
         property_input = load_property_json("examples/sample_property.json")
         report = build_report(property_input)
         assumptions = normalize_property(enrich_property_input(property_input))
-        offer = suggested_max_offer(assumptions, report.metrics.noi_before_reserves)
+        offer, binding_constraint = suggested_max_offer(assumptions, report.metrics.noi_before_reserves)
         self.assertGreater(offer, 0)
         self.assertLess(offer, assumptions.purchase_price)
+        self.assertIn(binding_constraint, {"cap_rate", "dscr", "cash_on_cash"})
 
     def test_rent_growth_is_applied_year_by_year(self) -> None:
         assumptions = normalize_property(enrich_property_input(load_property_json("examples/sample_property.json")))
@@ -65,13 +70,13 @@ class UnderwritingTests(unittest.TestCase):
         assumptions = normalize_property(enrich_property_input(load_property_json("examples/sample_property.json")))
         rows = build_pro_forma(assumptions)
         self.assertAlmostEqual(rows[0].operating_expenses, assumptions.operating_expenses)
-        self.assertAlmostEqual(rows[1].operating_expenses, assumptions.operating_expenses * 1.035)
+        self.assertAlmostEqual(rows[1].operating_expenses, assumptions.operating_expenses * 1.025)
 
     def test_dscr_uses_noi_before_reserves(self) -> None:
         report = build_report(load_property_json("examples/sample_property.json"))
         first_year = report.pro_forma[0]
-        expected_dscr = first_year.noi_before_reserves / first_year.annual_debt_service
-        after_reserve_dscr = first_year.noi_after_reserves / first_year.annual_debt_service
+        expected_dscr = first_year["noi_before_reserves"] / first_year["annual_debt_service"]
+        after_reserve_dscr = first_year["noi_after_reserves"] / first_year["annual_debt_service"]
         self.assertAlmostEqual(report.metrics.dscr or 0.0, expected_dscr)
         self.assertGreater(report.metrics.dscr or 0.0, after_reserve_dscr)
 
@@ -92,10 +97,18 @@ class UnderwritingTests(unittest.TestCase):
         cash_flows_with_sale = [-equity] + [row.cash_flow_before_tax for row in rows]
         cash_flows_without_sale = list(cash_flows_with_sale)
         cash_flows_with_sale[-1] += sale_proceeds
-        self.assertAlmostEqual(report.pro_forma[-1].sale_proceeds, sale_proceeds)
+        self.assertAlmostEqual(report.pro_forma[-1]["sale_proceeds"], sale_proceeds)
+        self.assertAlmostEqual(
+            report.pro_forma[-1]["total_cash_flow"],
+            report.pro_forma[-1]["cash_flow_before_tax"] + sale_proceeds,
+        )
         self.assertAlmostEqual(report.metrics.npv, npv(assumptions.discount_rate, cash_flows_with_sale))
         self.assertGreater(report.metrics.npv, npv(assumptions.discount_rate, cash_flows_without_sale))
         self.assertAlmostEqual(report.metrics.irr or 0.0, irr(cash_flows_with_sale) or 0.0)
+
+    def test_binding_offer_constraint_is_populated(self) -> None:
+        report = build_report(load_property_json("examples/sample_property.json"))
+        self.assertIn(report.metrics.binding_offer_constraint, {"cap_rate", "dscr", "cash_on_cash"})
 
     def test_provenance_field_defaults_missing_review_flag(self) -> None:
         field = ProvenanceField()

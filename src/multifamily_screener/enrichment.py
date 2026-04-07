@@ -7,9 +7,9 @@ from multifamily_screener.schemas import NormalizedPropertyInput, ProvenanceFiel
 
 class EnrichmentDefaults(BaseModel):
     vacancy_rate: float = 0.05
-    rent_growth_rate: float = 0.03
+    rent_growth: float = 0.03
     other_income: float = 0.0
-    expense_growth_rate: float = 0.03
+    expense_growth: float = 0.025
     capex_reserve: float = 250.0
     max_ltv: float = 0.70
     interest_rate: float = 0.065

@@ -39,6 +39,9 @@ def calculate_metrics(assumptions: UnderwritingAssumptions) -> UnderwritingMetri
     cash_flows = [-equity_invested] + [row.cash_flow_before_tax for row in pro_forma]
     cash_flows[-1] += net_sale_proceeds
     offer_analysis = analyze_suggested_offer(assumptions, first_year.noi_before_reserves)
+    final_year.sale_proceeds = net_sale_proceeds
+    final_year.total_cash_flow = final_year.cash_flow_before_tax + net_sale_proceeds
+    pro_forma_payload = [row.model_dump(mode="json") for row in pro_forma]
 
     return UnderwritingMetrics(
         effective_gross_income=first_year.effective_gross_income,
@@ -61,6 +64,7 @@ def calculate_metrics(assumptions: UnderwritingAssumptions) -> UnderwritingMetri
         ),
         exit_value=sale_price,
         suggested_max_offer=offer_analysis.suggested_max_offer,
-        suggested_max_offer_binding_constraint=offer_analysis.binding_constraint,
+        binding_offer_constraint=offer_analysis.binding_constraint,
+        pro_forma=pro_forma_payload,
         terminal_loan_balance=terminal_balance,
     )

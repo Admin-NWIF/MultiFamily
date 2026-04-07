@@ -39,11 +39,11 @@ class NormalizedPropertyInput(BaseModel):
     units: ProvenanceField | None = None
     purchase_price: ProvenanceField | None = None
     gross_potential_rent: ProvenanceField | None = None
-    rent_growth_rate: ProvenanceField | None = None
+    rent_growth: ProvenanceField | None = None
     vacancy_rate: ProvenanceField | None = None
     other_income: ProvenanceField | None = None
     operating_expenses: ProvenanceField | None = None
-    expense_growth_rate: ProvenanceField | None = None
+    expense_growth: ProvenanceField | None = None
     capex_reserve: ProvenanceField | None = None
     loan_amount: ProvenanceField | None = None
     max_ltv: ProvenanceField | None = None
@@ -66,11 +66,11 @@ class UnderwritingAssumptions(BaseModel):
     units: int
     purchase_price: float
     gross_potential_rent: float
-    rent_growth_rate: float
+    rent_growth: float
     vacancy_rate: float
     other_income: float
     operating_expenses: float
-    expense_growth_rate: float
+    expense_growth: float
     capex_reserve: float
     loan_amount: float
     max_ltv: float
@@ -99,6 +99,7 @@ class ProFormaRow(BaseModel):
     noi_after_reserves: float
     annual_debt_service: float
     cash_flow_before_tax: float
+    ending_loan_balance: float
     sale_proceeds: float = 0.0
     total_cash_flow: float
 
@@ -118,13 +119,14 @@ class UnderwritingMetrics(BaseModel):
     break_even_occupancy: float
     exit_value: float
     suggested_max_offer: float
-    suggested_max_offer_binding_constraint: str
+    binding_offer_constraint: str | None
+    pro_forma: list[dict]
     terminal_loan_balance: float
 
 
 class OfferAnalysis(BaseModel):
     suggested_max_offer: float
-    binding_constraint: str
+    binding_constraint: str | None
     cap_rate_offer: float
     dscr_offer: float
     cash_on_cash_offer: float
@@ -148,7 +150,7 @@ class Report(BaseModel):
     name: str | None = None
     address: str | None = None
     metrics: UnderwritingMetrics
-    pro_forma: list[ProFormaRow]
+    pro_forma: list[dict]
     assumed_fields: dict[str, ProvenanceField]
     decision: Decision
     flags: list[Flag]
