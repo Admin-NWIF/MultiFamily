@@ -1,16 +1,44 @@
 from __future__ import annotations
 
 import argparse
+import csv
+import json
 import sys
 from pathlib import Path
+from typing import Any
 
 SRC_DIR = Path(__file__).resolve().parents[1] / "src"
 if SRC_DIR.exists() and str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
-from multifamily_screener.ingestion import load_property_json
 from multifamily_screener.reports import build_report
 from multifamily_screener.schemas import Report
+from multifamily_screener.screening.batch import screen_properties, shortlist_properties
+
+
+PROVENANCE_FIELDS = {
+    "units",
+    "purchase_price",
+    "gross_potential_rent",
+    "rent_growth",
+    "vacancy_rate",
+    "other_income",
+    "operating_expenses",
+    "expense_growth",
+    "capex_reserve",
+    "loan_amount",
+    "max_ltv",
+    "interest_rate",
+    "amortization_years",
+    "hold_years",
+    "exit_cap_rate",
+    "selling_cost_rate",
+    "acquisition_cost_rate",
+    "discount_rate",
+    "target_cap_rate",
+    "target_dscr",
+    "target_cash_on_cash",
+}
 
 
 def main() -> int:
@@ -18,11 +46,87 @@ def main() -> int:
     parser.add_argument("property_json", help="Path to normalized property JSON.")
     args = parser.parse_args()
 
-    report = build_report(load_property_json(args.property_json))
+    payload = load_input_payload(args.property_json)
+    if isinstance(payload, list):
+        reports = screen_properties(payload)
+        shortlist = shortlist_properties(reports)
+        print_ranked_shortlist(shortlist)
+        return 0
+
+    report = build_report(payload)
     print_summary(report)
     print("\nFull report JSON:")
     print(report.model_dump_json(indent=2))
     return 0
+
+
+def load_input_payload(path: str) -> dict[str, Any] | list[dict[str, Any]]:
+    input_path = Path(path)
+    if input_path.suffix.lower() == ".csv":
+        return load_property_csv(input_path)
+
+    with input_path.open("r", encoding="utf-8") as fp:
+        data = json.load(fp)
+    if isinstance(data, list):
+        return data
+    if isinstance(data, dict):
+        return data
+    raise ValueError("Input must be a JSON object, JSON array, or CSV file.")
+
+
+def load_property_csv(path: Path) -> list[dict[str, Any]]:
+    with path.open("r", encoding="utf-8", newline="") as fp:
+        return [_csv_row_to_property(row) for row in csv.DictReader(fp)]
+
+
+def _csv_row_to_property(row: dict[str, str | None]) -> dict[str, Any]:
+    property_data: dict[str, Any] = {}
+    for key, raw_value in row.items():
+        if raw_value is None or raw_value == "":
+            continue
+        if key in {"property_id", "name", "address"}:
+            property_data[key] = raw_value
+        elif key in PROVENANCE_FIELDS:
+            property_data[key] = {
+                "value": _parse_csv_value(raw_value),
+                "status": "actual",
+                "source": "csv",
+                "confidence": 0.8,
+                "review_flag": False,
+                "note": "Loaded from CSV input.",
+            }
+    return property_data
+
+
+def _parse_csv_value(value: str) -> str | int | float:
+    try:
+        parsed = float(value)
+    except ValueError:
+        return value
+    if parsed.is_integer():
+        return int(parsed)
+    return parsed
+
+
+def print_ranked_shortlist(reports: list[Report]) -> None:
+    print("Ranked Shortlist:")
+    if not reports:
+        print("  No deals met shortlist criteria.")
+        return
+    for rank, report in enumerate(reports, start=1):
+        metrics = report.metrics
+        asking_price = report.provenance.get("purchase_price")
+        asking_value = asking_price.value if asking_price is not None else None
+        print(
+            f"{rank}. {report.address or report.name or report.property_id} | "
+            f"asking_price: {_format_currency(asking_value)} | "
+            f"suggested_offer: ${metrics.suggested_max_offer:,.0f} | "
+            f"irr: {_format_percent(metrics.irr)} | "
+            f"dscr: {_format_ratio(metrics.dscr)} | "
+            f"cash_on_cash: {_format_percent(metrics.cash_on_cash)} | "
+            f"flags: {len(report.flags)} | "
+            f"binding_offer_constraint: {metrics.binding_offer_constraint or 'n/a'}"
+        )
 
 
 def print_summary(report: Report) -> None:
@@ -78,6 +182,12 @@ def _format_percent(value: float | None) -> str:
 
 def _format_ratio(value: float | None) -> str:
     return "n/a" if value is None else f"{value:.2f}"
+
+
+def _format_currency(value: Any) -> str:
+    if isinstance(value, int | float):
+        return f"${value:,.0f}"
+    return "n/a" if value is None else str(value)
 
 
 if __name__ == "__main__":

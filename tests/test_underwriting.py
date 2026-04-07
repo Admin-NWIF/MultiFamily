@@ -66,11 +66,25 @@ class UnderwritingTests(unittest.TestCase):
         self.assertAlmostEqual(rows[0].gross_potential_rent, assumptions.gross_potential_rent)
         self.assertAlmostEqual(rows[1].gross_potential_rent, assumptions.gross_potential_rent * 1.03)
 
+    def test_year_2_gross_potential_rent_exceeds_year_1_in_metrics_pro_forma(self) -> None:
+        report = build_report(load_property_json("examples/sample_property.json"))
+        self.assertGreater(
+            report.metrics.pro_forma[1]["gross_potential_rent"],
+            report.metrics.pro_forma[0]["gross_potential_rent"],
+        )
+
     def test_expense_growth_is_applied_year_by_year(self) -> None:
         assumptions = normalize_property(enrich_property_input(load_property_json("examples/sample_property.json")))
         rows = build_pro_forma(assumptions)
         self.assertAlmostEqual(rows[0].operating_expenses, assumptions.operating_expenses)
         self.assertAlmostEqual(rows[1].operating_expenses, assumptions.operating_expenses * 1.025)
+
+    def test_year_2_operating_expenses_exceed_year_1_in_metrics_pro_forma(self) -> None:
+        report = build_report(load_property_json("examples/sample_property.json"))
+        self.assertGreater(
+            report.metrics.pro_forma[1]["operating_expenses"],
+            report.metrics.pro_forma[0]["operating_expenses"],
+        )
 
     def test_dscr_uses_noi_before_reserves(self) -> None:
         report = build_report(load_property_json("examples/sample_property.json"))
@@ -109,6 +123,12 @@ class UnderwritingTests(unittest.TestCase):
     def test_binding_offer_constraint_is_populated(self) -> None:
         report = build_report(load_property_json("examples/sample_property.json"))
         self.assertIn(report.metrics.binding_offer_constraint, {"cap_rate", "dscr", "cash_on_cash"})
+
+    def test_noi_before_reserves_differs_from_after_reserves_when_capex_is_positive(self) -> None:
+        report = build_report(load_property_json("examples/sample_property.json"))
+        first_year = report.metrics.pro_forma[0]
+        self.assertGreater(first_year["capex_reserve"], 0)
+        self.assertNotEqual(first_year["noi_before_reserves"], first_year["noi_after_reserves"])
 
     def test_provenance_field_defaults_missing_review_flag(self) -> None:
         field = ProvenanceField()
