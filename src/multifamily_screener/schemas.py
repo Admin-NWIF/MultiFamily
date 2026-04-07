@@ -120,8 +120,8 @@ class UnderwritingMetrics(BaseModel):
     exit_value: float
     suggested_max_offer: float
     binding_offer_constraint: str | None
-    pro_forma: list[dict]
     terminal_loan_balance: float
+    pro_forma: list[dict]
 
 
 class OfferAnalysis(BaseModel):
